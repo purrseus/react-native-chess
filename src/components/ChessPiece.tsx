@@ -216,11 +216,6 @@ export default abstract class ChessPiece extends DraggableComponent<ChessPiecePr
       const isInChessBoard = squareAddress.every(utils.isIdxInBoard);
       if (!isInChessBoard) continue;
 
-      const chessPiece =
-        chessBoard[squareAddress.first][squareAddress.last].chessPiece;
-      const sameChessPieceColor = this.props.data.color === chessPiece?.color;
-      if (sameChessPieceColor) continue;
-
       const isInvalid = customValidator?.({
         direction,
         squareAddress,
@@ -229,6 +224,11 @@ export default abstract class ChessPiece extends DraggableComponent<ChessPiecePr
       });
 
       if (isInvalid) continue;
+
+      const chessPiece =
+        chessBoard[squareAddress.first][squareAddress.last].chessPiece;
+      const sameChessPieceColor = this.props.data.color === chessPiece?.color;
+      if (sameChessPieceColor) continue;
 
       const possibleMove = squareAddress.join('-') as SquareAddressString;
       this.possibleMoves.push(possibleMove);
@@ -245,7 +245,6 @@ export default abstract class ChessPiece extends DraggableComponent<ChessPiecePr
     blockedDirections?: Record<string, boolean>;
   }): boolean {
     blockedDirections![direction] ??= false;
-
     const isThisDirectionBlocked = !!blockedDirections![direction];
     if (isThisDirectionBlocked) return true;
 

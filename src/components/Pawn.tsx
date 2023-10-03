@@ -40,9 +40,9 @@ export default class Pawn extends ChessPiece {
               const previousSquare =
                 chessBoard[squareAddress.first - offsetStep(1)][
                   squareAddress.last
-                ].chessPiece;
+                ];
 
-              return !!previousSquare;
+              return !!previousSquare.chessPiece || !!targetSquare.chessPiece;
             }
 
             return !!targetSquare.chessPiece;
