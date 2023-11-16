@@ -8,11 +8,7 @@ import Pawn from './Pawn';
 import Queen from './Queen';
 import Rook from './Rook';
 
-interface ChessPieceFactoryProps extends ChessPieceProps {
-  type: ChessPieceType;
-}
-
-export default class ChessPieceFactory extends Component<ChessPieceFactoryProps> {
+export default class ChessPieceFactory extends Component<ChessPieceProps> {
   private readonly chessPieces = new Map<ChessPieceType, typeof Component>([
     [ChessPieceType.King, King],
     [ChessPieceType.Queen, Queen],
@@ -23,7 +19,7 @@ export default class ChessPieceFactory extends Component<ChessPieceFactoryProps>
   ]);
 
   render(): React.ReactNode {
-    const ChessPieceComponent = this.chessPieces.get(this.props.type);
+    const ChessPieceComponent = this.chessPieces.get(this.props.data.type);
     if (!ChessPieceComponent) return null;
 
     return <ChessPieceComponent {...this.props} />;

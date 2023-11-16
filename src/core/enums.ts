@@ -21,3 +21,10 @@ export enum Turn {
   Our,
   Enemy,
 }
+
+export enum MoveType {
+  Standard,
+  EnPassant,
+  Promotion,
+  Castling,
+}

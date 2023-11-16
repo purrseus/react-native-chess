@@ -1,9 +1,7 @@
-import { SquareAddress, SquareAddressString } from '../core/types';
+import { SquareAddress } from '../core/types';
 import ChessPiece from './ChessPiece';
 
 export default class Knight extends ChessPiece {
-  protected possibleMoves: SquareAddressString[] = [];
-
   protected calculateMoves(): void {
     const { rowIdx, colIdx } = this.props;
 

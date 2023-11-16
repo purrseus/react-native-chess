@@ -1,5 +1,4 @@
-import { LayoutChangeEvent, ViewStyle } from 'react-native';
-import { ChessPieceType, ChessPieceColor, SquareColor } from './enums';
+import { ChessPieceColor, ChessPieceType, SquareColor } from './enums';
 import { SquareAddressString } from './types';
 
 export interface Coordinates {
@@ -17,7 +16,7 @@ export interface ChessPieceData {
 }
 
 export interface SquareData {
-  id: SquareAddressString
+  id: SquareAddressString;
   color: SquareColor;
   suggesting: boolean;
   coordinates?: Coordinates;
@@ -30,8 +29,6 @@ export interface ChessBoardItem<D> {
   data: D;
 }
 
-export interface ChessPieceProps
-  extends ChessBoardItem<NonNullable<SquareData['chessPiece']>> {
+export interface ChessPieceProps extends ChessBoardItem<ChessPieceData> {
   coordinates: Coordinates;
 }
-

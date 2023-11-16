@@ -5,7 +5,7 @@ import {
 } from 'react-native-gesture-handler';
 import { runOnJS, withSpring, withTiming } from 'react-native-reanimated';
 import { INITIAL_OFFSET, SQUARE_SIZE } from '../core/constants';
-import { Turn } from '../core/enums';
+import { MoveType, Turn } from '../core/enums';
 import { ChessPieceProps, SquareData } from '../core/interfaces';
 import { Offset, SquareAddress, SquareAddressString } from '../core/types';
 import useChessStore from '../store';
@@ -14,9 +14,11 @@ import ChessPieceUI from './ChessPieceUI';
 import DraggableComponent from './DraggableComponent';
 
 export default abstract class ChessPiece extends DraggableComponent<ChessPieceProps> {
-  protected abstract possibleMoves: SquareAddressString[];
-
   protected abstract calculateMoves(): void;
+  protected possibleMove: {
+    addresses: SquareAddressString[];
+    types: MoveType[];
+  } = { addresses: [], types: [] };
 
   componentDidUpdate({
     rowIdx: prevRowIdx,
@@ -26,7 +28,10 @@ export default abstract class ChessPiece extends DraggableComponent<ChessPiecePr
     const prevSquareAddress = utils.stringifySquareId([prevRowIdx, preColIdx]);
     const currentSquareAddress = utils.stringifySquareId([rowIdx, colIdx]);
 
-    if (prevSquareAddress !== currentSquareAddress) this.resetValue();
+    if (prevSquareAddress !== currentSquareAddress) {
+      this.sharedValues.offset.value = INITIAL_OFFSET;
+      this.clearPossibleMoves();
+    }
   }
 
   //#region  gestures
@@ -34,7 +39,7 @@ export default abstract class ChessPiece extends DraggableComponent<ChessPiecePr
     event: GestureStateChangeEvent<PanGestureHandlerEventPayload>,
   ): void {
     this.calculateMoves();
-    this.suggestSquares(this.possibleMoves);
+    useChessStore.getState().suggestSquares(this.possibleMove.addresses);
     this.sharedValues.isPressed.value = true;
   }
 
@@ -111,8 +116,8 @@ export default abstract class ChessPiece extends DraggableComponent<ChessPiecePr
     event: GestureStateChangeEvent<PanGestureHandlerEventPayload>,
     success: boolean,
   ): void {
-    this.possibleMoves = [];
-    this.removeSquareSuggestions();
+    this.clearPossibleMoves();
+    useChessStore.getState().removeSquareSuggestions();
     this.sharedValues.isPressed.value = false;
   }
 
@@ -149,17 +154,18 @@ export default abstract class ChessPiece extends DraggableComponent<ChessPiecePr
   //#endregion
 
   //#region navigation
-  protected goBack(): void {
+  private goBack(): void {
     this.sharedValues.offset.value = withSpring(INITIAL_OFFSET, {
       damping: 14,
     });
   }
 
-  protected moveTo(targetSquare: SquareData): void {
+  private moveTo(targetSquare: SquareData): void {
     const { rowIdx, colIdx, coordinates } = this.props;
+    const { addresses, types } = this.possibleMove;
     const { moveChessPiece, switchTurn } = useChessStore.getState();
 
-    const canMove = this.possibleMoves.includes(targetSquare.id);
+    const canMove = addresses.includes(targetSquare.id);
 
     if (!canMove) {
       this.goBack();
@@ -175,20 +181,16 @@ export default abstract class ChessPiece extends DraggableComponent<ChessPiecePr
       finished => {
         if (!finished) return;
         const targetSquareAddress = utils.parseSquareId(targetSquare.id);
-        runOnJS(moveChessPiece)([rowIdx, colIdx], targetSquareAddress);
-        runOnJS(switchTurn)();
+        const moveType = types[addresses.indexOf(targetSquare.id)];
+
+        runOnJS(moveChessPiece)(
+          [rowIdx, colIdx],
+          targetSquareAddress,
+          moveType,
+        );
+        if (moveType !== MoveType.Promotion) runOnJS(switchTurn)();
       },
     );
-  }
-  //#endregion
-
-  //#region interaction
-  protected suggestSquares(moves: SquareAddressString[]): void {
-    useChessStore.getState().suggestSquares(moves);
-  }
-
-  protected removeSquareSuggestions(): void {
-    useChessStore.getState().removeSquareSuggestions();
   }
   //#endregion
 
@@ -204,7 +206,7 @@ export default abstract class ChessPiece extends DraggableComponent<ChessPiecePr
       direction: K;
       squareAddress: V;
       blockedDirections: typeof blockedDirections;
-    }) => boolean;
+    }) => { isInvalid: true } | { isInvalid: false; moveType: MoveType };
   }): void {
     const chessBoard = useChessStore.getState().chessBoard;
 
@@ -216,14 +218,13 @@ export default abstract class ChessPiece extends DraggableComponent<ChessPiecePr
       const isInChessBoard = squareAddress.every(utils.isIdxInBoard);
       if (!isInChessBoard) continue;
 
-      const isInvalid = customValidator?.({
+      const result = customValidator?.({
         direction,
         squareAddress,
-        blockedDirections:
-          blockedDirections || ({} as unknown as typeof blockedDirections),
+        blockedDirections,
       });
 
-      if (isInvalid) continue;
+      if (result?.isInvalid) continue;
 
       const chessPiece =
         chessBoard[squareAddress.first][squareAddress.last].chessPiece;
@@ -231,7 +232,8 @@ export default abstract class ChessPiece extends DraggableComponent<ChessPiecePr
       if (sameChessPieceColor) continue;
 
       const possibleMove = squareAddress.join('-') as SquareAddressString;
-      this.possibleMoves.push(possibleMove);
+      this.possibleMove.addresses.push(possibleMove);
+      this.possibleMove.types.push(result?.moveType || MoveType.Standard);
     }
   }
 
@@ -243,15 +245,15 @@ export default abstract class ChessPiece extends DraggableComponent<ChessPiecePr
     direction: string;
     squareAddress: SquareAddress;
     blockedDirections?: Record<string, boolean>;
-  }): boolean {
+  }): { isInvalid: true } | { isInvalid: false; moveType: MoveType } {
     blockedDirections![direction] ??= false;
     const isThisDirectionBlocked = !!blockedDirections![direction];
-    if (isThisDirectionBlocked) return true;
+    if (isThisDirectionBlocked) return { isInvalid: true };
 
     const isAllDirectionsBlocked = Object.values(blockedDirections!).every(
       Boolean,
     );
-    if (isAllDirectionsBlocked) return true;
+    if (isAllDirectionsBlocked) return { isInvalid: true };
 
     const chessPiece =
       useChessStore.getState().chessBoard[squareAddress.first][
@@ -259,13 +261,13 @@ export default abstract class ChessPiece extends DraggableComponent<ChessPiecePr
       ].chessPiece;
 
     blockedDirections![direction] = !!chessPiece;
-    return false;
+    return { isInvalid: false, moveType: MoveType.Standard };
   }
   //#endregion
 
-  protected resetValue(): void {
-    this.sharedValues.offset.value = INITIAL_OFFSET;
-    this.possibleMoves = [];
+  protected clearPossibleMoves(): void {
+    this.possibleMove.addresses = [];
+    this.possibleMove.types = [];
   }
 
   render(): React.ReactNode {

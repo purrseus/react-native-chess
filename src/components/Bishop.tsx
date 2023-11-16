@@ -1,16 +1,13 @@
 import { GRID_SIZE } from '../core/constants';
 import {
   CornerDirection,
-  SquareAddress,
-  SquareAddressString,
+  SquareAddress
 } from '../core/types';
 import ChessPiece from './ChessPiece';
 
 type BishopDirectionData<V> = Record<CornerDirection, V>;
 
 export default class Bishop extends ChessPiece {
-  protected possibleMoves: SquareAddressString[] = [];
-
   protected calculateMoves(): void {
     const { rowIdx, colIdx } = this.props;
     const blockedDirections = {} as BishopDirectionData<boolean>;

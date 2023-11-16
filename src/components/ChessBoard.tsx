@@ -19,9 +19,10 @@ import { BOARD_SIZE, SQUARE_SIZE } from '../core/constants';
 import { ChessPieceColor, Turn } from '../core/enums';
 import useChessStore from '../store';
 import tw from '../tailwind-native';
+import utils from '../utils';
 import ChessPieceFactory from './ChessPieceFactory';
 import Square from './Square';
-import utils from '../utils';
+import ChessPieceSelection from './modals/ChessPieceSelection';
 
 const AnimatedGestureHandlerRootView = Animated.createAnimatedComponent(
   forwardRef<unknown, GestureHandlerRootViewProps>((props, _ref) => (
@@ -77,7 +78,7 @@ export default function ChessBoard() {
   }));
 
   useEffect(() => {
-    setup(ChessPieceColor.White);
+    setup(Math.random() > 0.5 ? ChessPieceColor.White: ChessPieceColor.Black);
   }, []);
 
   const handleLayout = useCallback(
@@ -110,13 +111,15 @@ export default function ChessBoard() {
 
     chessBoard.forEach((row, rowIdx) =>
       row.forEach((square, colIdx) => {
+        const isFirstSquare = !rowIdx && !colIdx;
+
         squares.push(
           <Square
             key={square.id}
             rowIdx={rowIdx}
             colIdx={colIdx}
             data={square}
-            handleLayout={!rowIdx && !colIdx ? handleLayout : undefined}
+            handleLayout={isFirstSquare ? handleLayout : undefined}
             fromSquareHighlighting={square.id === fromSquareId}
             toSquareHighlighting={square.id === toSquareId}
           />,
@@ -126,7 +129,6 @@ export default function ChessBoard() {
           chessPieces.push(
             <ChessPieceFactory
               key={square.chessPiece.id}
-              type={square.chessPiece.type}
               rowIdx={rowIdx}
               colIdx={colIdx}
               data={square.chessPiece}
@@ -147,6 +149,7 @@ export default function ChessBoard() {
           style={tw`w-[${BOARD_SIZE}px] h-[${BOARD_SIZE}px] flex-row flex-wrap`}>
           {squares}
           {chessPieces}
+          <ChessPieceSelection />
         </View>
       </View>
     </AnimatedGestureHandlerRootView>

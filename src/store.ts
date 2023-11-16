@@ -5,12 +5,14 @@ import { GRID_SIZE, SQUARE_SIZE } from './core/constants';
 import {
   ChessPieceColor,
   ChessPieceType,
+  MoveType,
   SquareColor,
   Turn,
 } from './core/enums';
 import { Coordinates, SquareData } from './core/interfaces';
 import { Offset, SquareAddress, SquareAddressString } from './core/types';
 import utils from './utils';
+import { chessPieceSelectionRef } from './components/modals/ChessPieceSelection';
 
 interface MetaData {
   isReady: boolean;
@@ -29,7 +31,15 @@ type State = {
 export type Action = {
   setup: (chessPieceColor: ChessPieceColor) => void;
   setSquaresCoordinates: (firstCoordinates: Coordinates) => void;
-  moveChessPiece: (from: SquareAddress, to: SquareAddress) => void;
+  moveChessPiece: (
+    from: SquareAddress,
+    to: SquareAddress,
+    moveType: MoveType,
+  ) => void;
+  promotion: (
+    squareAddress: SquareAddress,
+    chessPieceType: ChessPieceType,
+  ) => void;
   switchTurn: () => void;
   suggestSquares: (moves: SquareAddressString[]) => void;
   removeSquareSuggestions: () => void;
@@ -66,7 +76,7 @@ const secondRowPosition = Array.from(
 );
 
 const useChessStore = createWithEqualityFn(
-  immer<State & Action>(set => ({
+  immer<State & Action>((set, get) => ({
     isReady: false,
     metadata: null,
     chessBoard: initChessBoard,
@@ -135,7 +145,7 @@ const useChessStore = createWithEqualityFn(
 
         state.metadata!.isReady = true;
       }),
-    moveChessPiece: ([fromRow, fromCol], [toRow, toCol]) =>
+    moveChessPiece: ([fromRow, fromCol], [toRow, toCol], moveType) =>
       set(state => {
         state.chessBoard[toRow][toCol].chessPiece =
           state.chessBoard[fromRow][fromCol].chessPiece;
@@ -148,6 +158,37 @@ const useChessStore = createWithEqualityFn(
           fromSquare: [fromRow, fromCol],
           toSquare: [toRow, toCol],
         };
+
+        const currentChessPieceColor =
+          state.chessBoard[toRow][toCol].chessPiece!.color;
+
+        switch (moveType) {
+          case MoveType.EnPassant:
+            const decrementStep =
+              currentChessPieceColor === state.metadata?.enemyChessPieceColor
+                ? -1
+                : 1;
+            delete state.chessBoard[toRow + decrementStep][toCol].chessPiece;
+            break;
+          case MoveType.Promotion:
+            const { coordinates, id } = get().chessBoard[toRow][toCol];
+
+            if (coordinates && typeof currentChessPieceColor === 'number') {
+              chessPieceSelectionRef.current?.showPromotableSelection({
+                chessPieceColor: currentChessPieceColor,
+                squareAddress: utils.parseSquareId(id),
+                coordinates,
+              });
+            }
+            break;
+          case MoveType.Castling:
+            break;
+          default:
+        }
+      }),
+    promotion: ([rowIdx, colIdx], chessPieceType) =>
+      set(state => {
+        state.chessBoard[rowIdx][colIdx].chessPiece!.type = chessPieceType;
       }),
     switchTurn: () =>
       set(state => {

@@ -8,4 +8,8 @@ export type SquareAddressString = `${number}-${number}`;
 
 export type CardinalDirection = 'top' | 'left' | 'right' | 'bottom';
 
-export type CornerDirection = 'topLeft' | 'topRight' | 'bottomLeft' | 'bottomRight';
+export type CornerDirection =
+  | 'topLeft'
+  | 'topRight'
+  | 'bottomLeft'
+  | 'bottomRight';

@@ -2,16 +2,13 @@ import { GRID_SIZE } from '../core/constants';
 import {
   CardinalDirection,
   CornerDirection,
-  SquareAddress,
-  SquareAddressString,
+  SquareAddress
 } from '../core/types';
 import ChessPiece from './ChessPiece';
 
 type QueenDirectionData<V> = Record<CornerDirection & CardinalDirection, V>;
 
 export default class Queen extends ChessPiece {
-  protected possibleMoves: SquareAddressString[] = [];
-
   protected calculateMoves(): void {
     const { rowIdx, colIdx } = this.props;
     const blockedDirections = {} as QueenDirectionData<boolean>;

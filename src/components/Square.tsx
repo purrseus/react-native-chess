@@ -6,7 +6,7 @@ import { SquareColor } from '../core/enums';
 import { ChessBoardItem, SquareData } from '../core/interfaces';
 import tw from '../tailwind-native';
 
-export interface SquareProps extends ChessBoardItem<NonNullable<SquareData>> {
+export interface SquareProps extends ChessBoardItem<SquareData> {
   handleLayout?: (event: LayoutChangeEvent) => void;
   fromSquareHighlighting?: boolean;
   toSquareHighlighting?: boolean;
