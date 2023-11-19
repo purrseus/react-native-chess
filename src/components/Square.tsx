@@ -5,6 +5,10 @@ import { SQUARE_SIZE } from '../core/constants';
 import { SquareColor } from '../core/enums';
 import { ChessBoardItem, SquareData } from '../core/interfaces';
 import tw from '../tailwind-native';
+import Animated, {
+  useAnimatedStyle,
+  withTiming,
+} from 'react-native-reanimated';
 
 export interface SquareProps extends ChessBoardItem<SquareData> {
   handleLayout?: (event: LayoutChangeEvent) => void;
@@ -26,6 +30,10 @@ const Square = memo(
   }: SquareProps) => {
     const noHighlight = !fromSquareHighlighting && !toSquareHighlighting;
 
+    const animatedStyle = useAnimatedStyle(() => ({
+      opacity: withTiming(+data.suggesting),
+    }));
+
     return (
       <View
         id={data.id}
@@ -36,9 +44,9 @@ const Square = memo(
           toSquareHighlighting && 'bg-green-500/50',
           noHighlight && squareStyle[data.color]!,
         )}>
-        {data.suggesting && (
-          <View style={tw`w-2/5 h-2/5 rounded-full bg-slate-500`} />
-        )}
+        <Animated.View
+          style={[tw`w-2/5 h-2/5 rounded-full bg-slate-500`, animatedStyle]}
+        />
       </View>
     );
   },

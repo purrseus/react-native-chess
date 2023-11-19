@@ -10,6 +10,7 @@ import { SQUARE_SIZE } from '../core/constants';
 import { Turn } from '../core/enums';
 import { ChessPieceProps } from '../core/interfaces';
 import { Offset } from '../core/types';
+import useInitialAnimation from '../hooks/useInitialAnimation';
 import useChessStore from '../store';
 import tw from '../tailwind-native';
 import ChessPieceSymbolText from './ChessPieceSymbolText';
@@ -26,6 +27,7 @@ export default function ChessPieceUI({
   sharedValues,
   panGesture,
 }: ChessPieceUIProps) {
+  const { initialStyle } = useInitialAnimation();
   const currentTurn = useChessStore(state => state.metadata?.currentTurn);
   sharedValues.isPressed = useSharedValue(false);
 
@@ -70,6 +72,7 @@ export default function ChessPieceUI({
         style={[
           tw`w-[${SQUARE_SIZE}px] h-[${SQUARE_SIZE}px] flex-center absolute left-[${coordinates.x}px] top-[${coordinates.y}px]`,
           animatedStyle,
+          initialStyle,
         ]}>
         <ChessPieceSymbolText color={data.color} type={data.type} />
       </Animated.View>

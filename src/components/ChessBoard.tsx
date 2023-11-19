@@ -15,14 +15,15 @@ import Animated, {
   useDerivedValue,
   withTiming,
 } from 'react-native-reanimated';
+import ChessPieceFactory from '../components/ChessPieceFactory';
+import Square from '../components/Square';
+import ChessPieceSelection from '../components/modals/ChessPieceSelection';
 import { BOARD_SIZE, SQUARE_SIZE } from '../core/constants';
 import { ChessPieceColor, Turn } from '../core/enums';
+import useInitialAnimation from '../hooks/useInitialAnimation';
 import useChessStore from '../store';
 import tw from '../tailwind-native';
 import utils from '../utils';
-import ChessPieceFactory from './ChessPieceFactory';
-import Square from './Square';
-import ChessPieceSelection from './modals/ChessPieceSelection';
 
 const AnimatedGestureHandlerRootView = Animated.createAnimatedComponent(
   forwardRef<unknown, GestureHandlerRootViewProps>((props, _ref) => (
@@ -41,13 +42,10 @@ export default function ChessBoard() {
     ],
   );
 
-  const {
-    ourChessPieceColor,
-    enemyChessPieceColor,
-    lastMove,
-    currentTurn,
-    isReady,
-  } = metadata || {};
+  const { ourChessPieceColor, enemyChessPieceColor, currentTurn, isReady } =
+    metadata || {};
+
+  const { initialStyle, animationEnd } = useInitialAnimation();
 
   const [ourColor, enemyColor] = useMemo(() => {
     const color = {
@@ -78,7 +76,7 @@ export default function ChessBoard() {
   }));
 
   useEffect(() => {
-    setup(Math.random() > 0.5 ? ChessPieceColor.White: ChessPieceColor.Black);
+    setup(Math.random() > 0.5 ? ChessPieceColor.White : ChessPieceColor.Black);
   }, []);
 
   const handleLayout = useCallback(
@@ -143,15 +141,19 @@ export default function ChessBoard() {
 
   return (
     <AnimatedGestureHandlerRootView
-      style={[tw`flex-fill-center`, animatedStyle]}>
-      <View style={tw`border border-gray-700 bg-white shadow-black shadow-2xl`}>
+      style={[tw`flex-fill-center`, animationEnd && isReady && animatedStyle]}>
+      <Animated.View
+        style={[
+          tw`border border-gray-700 bg-white shadow-black shadow-2xl`,
+          initialStyle,
+        ]}>
         <View
           style={tw`w-[${BOARD_SIZE}px] h-[${BOARD_SIZE}px] flex-row flex-wrap`}>
           {squares}
-          {chessPieces}
+          {animationEnd && chessPieces}
           <ChessPieceSelection />
         </View>
-      </View>
+      </Animated.View>
     </AnimatedGestureHandlerRootView>
   );
 }
