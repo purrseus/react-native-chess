@@ -6,7 +6,7 @@ import {
 } from '../core/types';
 import ChessPiece from './ChessPiece';
 
-type QueenDirectionData<V> = Record<CornerDirection & CardinalDirection, V>;
+type QueenDirectionData<V> = Record<CornerDirection | CardinalDirection, V>;
 
 export default class Queen extends ChessPiece {
   protected calculateMoves(): void {

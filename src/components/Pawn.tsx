@@ -6,6 +6,13 @@ import useChessStore from '../store';
 import ChessPiece from './ChessPiece';
 
 export default class Pawn extends ChessPiece {
+  private readonly validMove = {
+    isInvalid: false as const,
+    moveType: MoveType.Standard,
+  };
+
+  private readonly invalidMove = { isInvalid: true as const };
+
   protected calculateMoves(): void {
     const { rowIdx, colIdx, data } = this.props;
     const { metadata, chessBoard } = useChessStore.getState();
@@ -16,12 +23,6 @@ export default class Pawn extends ChessPiece {
 
     const incrementStep = offsetStep(1);
     const decrementStep = isEnemyChessPiece ? -1 : 1;
-
-    const validMove = {
-      isInvalid: false as const,
-      moveType: MoveType.Standard,
-    };
-    const invalidMove = { isInvalid: true as const };
 
     for (let step = 1; step <= maxStep; step++) {
       const stepDirections: Record<
@@ -44,11 +45,13 @@ export default class Pawn extends ChessPiece {
           const isLastRank =
             squareAddress.first === (isEnemyChessPiece ? GRID_SIZE - 1 : 0);
 
-          if (isLastRank) validMove.moveType = MoveType.Promotion;
+          if (isLastRank) this.validMove.moveType = MoveType.Promotion;
 
           if (direction === 'forward') {
             if (step === 1)
-              return !targetSquare.chessPiece ? validMove : invalidMove;
+              return !targetSquare.chessPiece
+                ? this.validMove
+                : this.invalidMove;
 
             const previousSquare =
               chessBoard[squareAddress.first + decrementStep][
@@ -56,11 +59,11 @@ export default class Pawn extends ChessPiece {
               ];
 
             return !previousSquare.chessPiece && !targetSquare.chessPiece
-              ? validMove
-              : invalidMove;
+              ? this.validMove
+              : this.invalidMove;
           }
 
-          if (targetSquare.chessPiece) return validMove;
+          if (targetSquare.chessPiece) return this.validMove;
 
           const sameLevelRowIdx = squareAddress.first + decrementStep;
           const sameLevelBesideSquare =
@@ -74,7 +77,7 @@ export default class Pawn extends ChessPiece {
           )
             return { isInvalid: false, moveType: MoveType.EnPassant };
 
-          return invalidMove;
+          return this.invalidMove;
         },
       });
     }

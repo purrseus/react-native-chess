@@ -1,6 +1,7 @@
 import isEqual from 'react-fast-compare';
 import { immer } from 'zustand/middleware/immer';
 import { createWithEqualityFn } from 'zustand/traditional';
+import { chessPieceSelectionRef } from './components/modals/ChessPieceSelection';
 import { GRID_SIZE, SQUARE_SIZE } from './core/constants';
 import {
   ChessPieceColor,
@@ -12,7 +13,6 @@ import {
 import { Coordinates, SquareData } from './core/interfaces';
 import { Offset, SquareAddress, SquareAddressString } from './core/types';
 import utils from './utils';
-import { chessPieceSelectionRef } from './components/modals/ChessPieceSelection';
 
 interface MetaData {
   isReady: boolean;
@@ -20,6 +20,8 @@ interface MetaData {
   enemyChessPieceColor: ChessPieceColor;
   currentTurn: Turn;
   chessBoardCoordinates?: Record<'start' | 'end', Offset>;
+  kingsideCastlingOffset?: number;
+  queenSideCastlingOffset?: number;
   lastMove?: Record<'fromSquare' | 'toSquare', SquareAddress>;
 }
 
@@ -99,6 +101,8 @@ const useChessStore = createWithEqualityFn(
           ourChessPieceColor,
           enemyChessPieceColor,
           currentTurn: areOurBlackChessPieces ? Turn.Enemy : Turn.Our,
+          kingsideCastlingOffset: areOurBlackChessPieces ? -2 : 2,
+          queenSideCastlingOffset: areOurBlackChessPieces ? 2 : -2,
         };
 
         state.chessBoard[0] = state.chessBoard[0].map(
@@ -170,6 +174,7 @@ const useChessStore = createWithEqualityFn(
                 : 1;
             delete state.chessBoard[toRow + decrementStep][toCol].chessPiece;
             break;
+
           case MoveType.Promotion:
             const { coordinates, id } = get().chessBoard[toRow][toCol];
 
@@ -181,7 +186,17 @@ const useChessStore = createWithEqualityFn(
               });
             }
             break;
+
           case MoveType.Castling:
+            const isToLeft = fromCol > toCol;
+
+            state.chessBoard[toRow][Math.max(fromCol, toCol) - 1].chessPiece =
+              state.chessBoard[fromRow][
+                isToLeft ? 0 : GRID_SIZE - 1
+              ].chessPiece;
+
+            delete state.chessBoard[fromRow][isToLeft ? 0 : GRID_SIZE - 1]
+              .chessPiece;
             break;
           default:
         }
